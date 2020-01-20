@@ -1,20 +1,43 @@
 const socket = io()
 
+// Elements
+const $messageForm = document.querySelector('form')
+const $messageFormInput = $messageForm.querySelector('input')
+const $messageFormButton = $messageForm.querySelector('button')
+const $sendLocationButton = document.getElementById('send-location')
+const $messages = document.getElementById('messages')
+
+// Templates
+const messageTemplate = document.getElementById('message-template').innerHTML
+
 socket.on('message', message => {
-  console.log(message)
+  const html = Mustache.render(messageTemplate, { message })
+  $messages.insertAdjacentHTML('beforeend', html)
 })
 
-function handleSubmit(e) {
+$messageForm.addEventListener('submit', e => {
   e.preventDefault()
+
+  $messageFormButton.setAttribute('disabled', 'disabled')
 
   const message = e.target.elements.message.value
 
-  socket.emit('sendMessage', message)
-}
+  socket.emit('sendMessage', message, error => {
+    $messageFormButton.removeAttribute('disabled')
+    $messageFormInput.value = ''
+    $messageFormInput.focus()
 
-document.querySelector('form').addEventListener('submit', handleSubmit)
+    if (error) {
+      return console.log(error)
+    }
 
-document.getElementById('send-location').addEventListener('click', () => {
+    console.log('Message delivered!')
+  })
+})
+
+$sendLocationButton.addEventListener('click', () => {
+  $sendLocationButton.setAttribute('disabled', 'disabled')
+
   if (!navigator.geolocation) {
     return alert('Geolocation is not supported by your browser')
   }
@@ -22,6 +45,9 @@ document.getElementById('send-location').addEventListener('click', () => {
   navigator.geolocation.getCurrentPosition(position => {
     const { latitude, longitude } = position.coords
 
-    socket.emit('sendLocation', { latitude, longitude })
+    socket.emit('sendLocation', { latitude, longitude }, () => {
+      $sendLocationButton.removeAttribute('disabled')
+      console.log('Location shared')
+    })
   })
 })
