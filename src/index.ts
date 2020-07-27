@@ -6,6 +6,7 @@ import * as path from 'path'
 const Filter = require('bad-words')
 
 import { Location } from './typings'
+import { generateMessage } from './utils/messages'
 
 const app = express()
 const server = http.createServer(app)
@@ -19,8 +20,9 @@ app.use(express.static(publicDirectoryPath))
 io.on('connection', (socket: socketio.Socket) => {
   console.log('New WebSocket connection')
 
-  socket.emit('message', 'Welcome!')
-  socket.broadcast.emit('message', 'A new user has joined!')
+  socket.emit('message', generateMessage('Welcome'))
+
+  socket.broadcast.emit('message', generateMessage('A new user has joined!'))
 
   socket.on('sendMessage', (message: string, callback) => {
     const filter = new Filter()
@@ -29,7 +31,7 @@ io.on('connection', (socket: socketio.Socket) => {
       return callback('Profanity is not allowed')
     }
 
-    io.emit('message', message)
+    io.emit('message', generateMessage(message))
 
     callback()
   })
@@ -44,7 +46,7 @@ io.on('connection', (socket: socketio.Socket) => {
   })
 
   socket.on('disconnect', () => {
-    io.emit('message', 'A user has left!')
+    io.emit('message', generateMessage('A user has left!'))
   })
 })
 
