@@ -7,3 +7,8 @@ export interface Message {
   text: string
   createdAt: number
 }
+
+export interface LocationMessage {
+  locationUrl: string
+  createdAt: number
+}

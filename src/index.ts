@@ -6,7 +6,7 @@ import * as path from 'path'
 const Filter = require('bad-words')
 
 import { Location } from './typings'
-import { generateMessage } from './utils/messages'
+import { generateMessage, generateLocationMessage } from './utils/messages'
 
 const app = express()
 const server = http.createServer(app)
@@ -37,9 +37,11 @@ io.on('connection', (socket: socketio.Socket) => {
   })
 
   socket.on('sendLocation', ({ longitude, latitude }: Location, callback) => {
+    const locationUrl = `https://google.com/maps?q=${latitude},${longitude}`
+
     io.emit(
       'locationMessage',
-      `https://google.com/maps?q=${latitude},${longitude}`
+      generateLocationMessage(locationUrl)
     )
 
     callback()
