@@ -9,9 +9,17 @@ const $messages = document.getElementById('messages')
 
 // Templates
 const messageTemplate = document.getElementById('message-template').innerHTML
+const locationMessageTemplate = document.getElementById(
+  'location-message-template'
+).innerHTML
 
 socket.on('message', message => {
   const html = Mustache.render(messageTemplate, { message })
+  $messages.insertAdjacentHTML('beforeend', html)
+})
+
+socket.on('locationMessage', locationUrl => {
+  const html = Mustache.render(locationMessageTemplate, { locationUrl })
   $messages.insertAdjacentHTML('beforeend', html)
 })
 
