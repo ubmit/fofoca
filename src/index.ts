@@ -5,8 +5,9 @@ import * as path from 'path'
 
 const Filter = require('bad-words')
 
-import { Location } from './typings'
+import { Location, User } from './typings'
 import { generateMessage, generateLocationMessage } from './utils/messages'
+import { addUser, removeUser, getUser, getUsersInRoom } from './utils/users'
 
 const app = express()
 const server = http.createServer(app)
@@ -20,9 +21,29 @@ app.use(express.static(publicDirectoryPath))
 io.on('connection', (socket: socketio.Socket) => {
   console.log('New WebSocket connection')
 
-  socket.emit('message', generateMessage('Welcome'))
+  socket.on('join', ({ username, room }, callback) => {
+    const { error, user } = addUser({
+      id: socket.id,
+      username,
+      room
+    })
 
-  socket.broadcast.emit('message', generateMessage('A new user has joined!'))
+    if (error) {
+      return callback(error)
+    }
+
+    if (user) {
+      socket.join(user.room)
+
+      socket.emit('message', generateMessage('Welcome'))
+
+      socket.broadcast
+        .to(user.room)
+        .emit('message', generateMessage(`${user.username} has joined`))
+
+      callback()
+    }
+  })
 
   socket.on('sendMessage', (message: string, callback) => {
     const filter = new Filter()
@@ -39,16 +60,20 @@ io.on('connection', (socket: socketio.Socket) => {
   socket.on('sendLocation', ({ longitude, latitude }: Location, callback) => {
     const locationUrl = `https://google.com/maps?q=${latitude},${longitude}`
 
-    io.emit(
-      'locationMessage',
-      generateLocationMessage(locationUrl)
-    )
+    io.emit('locationMessage', generateLocationMessage(locationUrl))
 
     callback()
   })
 
   socket.on('disconnect', () => {
-    io.emit('message', generateMessage('A user has left!'))
+    const user = removeUser(socket.id)
+
+    if (user) {
+      io.to(user.room).emit(
+        'message',
+        generateMessage(`${user.username} has left!`)
+      )
+    }
   })
 })
 
